@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DTR Formatter</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="workspace" aria-label="DTR formatter">
+        <div class="topbar">
+          <div>
+            <h1>DTR Formatter</h1>
+            <p>Upload the DTR record, generate the relayouted Excel file, then download it.</p>
+          </div>
+          <div class="status-pill" id="statusPill">Ready</div>
+        </div>
+
+        <div class="steps" aria-label="Steps">
+          <div class="step active" id="stepUpload">
+            <span>1</span>
+            <strong>Upload record</strong>
+          </div>
+          <div class="step" id="stepGenerate">
+            <span>2</span>
+            <strong>Generate Excel</strong>
+          </div>
+          <div class="step" id="stepDownload">
+            <span>3</span>
+            <strong>Download file</strong>
+          </div>
+        </div>
+
+        <form id="uploadForm" class="panel">
+          <label class="dropzone" id="dropzone">
+            <input id="fileInput" type="file" name="file" accept=".xls,.xlsx" />
+            <span class="upload-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0 4.5 4.5M12 4 7.5 8.5M4 16.5V19a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2.5"/></svg>
+            </span>
+            <span class="drop-title" id="dropTitle">Choose DTR Excel record</span>
+            <span class="drop-subtitle" id="dropSubtitle">Accepted file: .xls or .xlsx</span>
+          </label>
+
+          <div class="actions">
+            <button type="submit" id="generateBtn" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v6l2-2m-2 2-2-2M5 13v6h14v-6M7 16h10"/></svg>
+              Generate relayouted file
+            </button>
+            <a class="download hidden" id="downloadLink" href="#" download>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>
+              Download Excel
+            </a>
+          </div>
+        </form>
+
+        <div class="result" id="resultBox" hidden>
+          <div>
+            <strong id="resultTitle">File is ready</strong>
+            <p id="resultText"></p>
+          </div>
+        </div>
+      </section>
+    </main>
+    <script src="/script.js"></script>
+  </body>
+</html>
