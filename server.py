@@ -47,8 +47,9 @@ class Handler(SimpleHTTPRequestHandler):
             input_path = Path(tmp.name)
 
         try:
-            OUTPUT_DIR.mkdir(exist_ok=True)
-            output_path, summary = convert_dtr(input_path, original_name, OUTPUT_DIR)
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                output_path, _ = convert_dtr(input_path, original_name, Path(tmp_dir))
+                body = output_path.read_bytes()
         except Exception as exc:
             self._json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
@@ -58,13 +59,15 @@ class Handler(SimpleHTTPRequestHandler):
             except OSError:
                 pass
 
-        self._json(
-            {
-                "downloadUrl": f"/outputs/{output_path.name}",
-                "fileName": output_path.name,
-                "summary": summary,
-            }
+        self.send_response(HTTPStatus.OK)
+        self.send_header(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
+        self.send_header("Content-Disposition", f'attachment; filename="{output_path.name}"')
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def do_GET(self):
         if self.path.startswith("/outputs/"):

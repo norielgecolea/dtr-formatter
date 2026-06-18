@@ -16,6 +16,7 @@ const steps = {
 };
 
 let selectedFile = null;
+let generatedDownloadUrl = null;
 
 function setStep(step) {
   Object.values(steps).forEach((item) => item.classList.remove("active"));
@@ -30,7 +31,11 @@ function setFile(file) {
   generateBtn.disabled = false;
   statusPill.textContent = "Record selected";
   setStep("generate");
+  if (generatedDownloadUrl) URL.revokeObjectURL(generatedDownloadUrl);
+  generatedDownloadUrl = null;
   downloadLink.classList.add("hidden");
+  downloadLink.removeAttribute("href");
+  downloadLink.removeAttribute("download");
   resultBox.hidden = true;
 }
 
@@ -83,17 +88,22 @@ form.addEventListener("submit", async (event) => {
 
   try {
     const response = await fetch("/api/format", { method: "POST", body });
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error || "Unable to generate the Excel file.");
+    if (!response.ok) throw new Error(await readErrorMessage(response));
 
-    downloadLink.href = payload.downloadUrl;
-    downloadLink.download = payload.fileName;
+    const blob = await response.blob();
+    const fileName = getDownloadFileName(response) || "DTR_RECORD_relayouted.xlsx";
+    if (generatedDownloadUrl) URL.revokeObjectURL(generatedDownloadUrl);
+    generatedDownloadUrl = URL.createObjectURL(blob);
+
+    downloadLink.href = generatedDownloadUrl;
+    downloadLink.download = fileName;
     downloadLink.classList.remove("hidden");
+    downloadLink.click();
     statusPill.textContent = "Ready to download";
     resultBox.classList.remove("error");
     resultBox.hidden = false;
     resultTitle.textContent = "Relayouted file is ready";
-    resultText.textContent = `${payload.summary.employees} employees formatted across ${payload.summary.days} DTR days.`;
+    resultText.textContent = `${fileName} has been generated and downloaded.`;
     setStep("download");
   } catch (error) {
     statusPill.textContent = "Needs attention";
@@ -104,3 +114,22 @@ form.addEventListener("submit", async (event) => {
     generateBtn.disabled = false;
   }
 });
+
+async function readErrorMessage(response) {
+  const fallback = "Unable to generate the Excel file.";
+  const contentType = response.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    const payload = await response.json().catch(() => null);
+    return payload?.error || fallback;
+  }
+  const text = await response.text().catch(() => "");
+  return text || fallback;
+}
+
+function getDownloadFileName(response) {
+  const disposition = response.headers.get("content-disposition") || "";
+  const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match) return decodeURIComponent(utf8Match[1]);
+  const plainMatch = disposition.match(/filename="?([^"]+)"?/i);
+  return plainMatch?.[1] || "";
+}
