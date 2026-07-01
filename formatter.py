@@ -183,8 +183,6 @@ def convert_dtr(input_path: Path, original_name: str, output_dir: Path) -> tuple
     dates = extract_dates(reader)
     if not dates:
         raise ValueError("No DTR cut-off dates were found in the file.")
-    if len(dates) > 15:
-        dates = dates[:15]
 
     workbook = build_output(employees, dates)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -216,7 +214,12 @@ def extract_employees(reader: XlsReader) -> list[Employee]:
             if not employee:
                 continue
             punch_row = row + 1
-            employee.punches = [clean(logs.get((punch_row, col))) for col in range(1, 17)]
+            punch_cols = sorted({col for (r, col) in logs if r == punch_row and col > 0})
+            if punch_cols:
+                max_col = max(punch_cols)
+                employee.punches = [clean(logs.get((punch_row, col))) for col in range(1, max_col + 1)]
+            else:
+                employee.punches = []
     return [employee for employee in employees if any(employee.punches or [])]
 
 
